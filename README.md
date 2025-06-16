@@ -4,10 +4,13 @@ A Raycast extension for managing Motion tasks directly from your command bar.
 
 ## Features
 
-- **Search Tasks**: View and search through all your Motion tasks
-- **Task Details**: See task priority, status, project, due dates, and assignees
-- **Quick Actions**: Open tasks in Motion, copy task names or IDs
-- **Visual Indicators**: Priority-based icons and status indicators
+- **Search Tasks**: View and search through all your Motion tasks with advanced filtering
+- **Detailed Task View**: Rich task details with metadata, scheduling info, and team information
+- **Smart Filtering**: Filter by completion status, priority level, or view all tasks
+- **Intelligent Sorting**: Tasks automatically sorted by priority, due date, and creation time
+- **Quick Actions**: Open tasks in Motion, copy task names, IDs, or URLs
+- **Visual Indicators**: Priority-based icons, completion status, and scheduling issue warnings
+- **Task Creation**: Create new Motion tasks directly from Raycast with full form support
 
 ## Setup
 
@@ -29,18 +32,34 @@ A Raycast extension for managing Motion tasks directly from your command bar.
 
 ### Search Tasks
 - **Command**: `Search Tasks`
-- **Description**: Lists all your Motion tasks with search functionality
+- **Description**: Lists all your Motion tasks with advanced search and filtering
 - **Features**:
   - Priority indicators (🔴 ASAP, 🟠 High, 🟡 Medium, 🔵 Low)
   - Task status and project information
-  - Due date display
-  - Assignee information
+  - Due date display with intelligent sorting
+  - Assignee information and team details
   - Completion status indicators
+  - Scheduling issue warnings
+  - **Filter Dropdown**: Filter by completion status or priority level
+  - **Detailed View**: Press Enter or click "Show Details" for comprehensive task information
+
+### Capture Motion Task
+- **Command**: `Capture Motion Task`
+- **Description**: Create new Motion tasks with a comprehensive form
+- **Features**:
+  - Task name and description (with Markdown support)
+  - Priority selection with visual indicators
+  - Due date picker
+  - Deadline type configuration (Hard/Soft/None)
+  - Duration settings
+  - Automatic Motion scheduling integration
 
 ### Actions Available
+- **Show Details**: Opens detailed task view with full metadata (Enter)
 - **Open in Motion**: Opens the task in the Motion web app
 - **Copy Task Name**: Copies the task name to clipboard (⌘C)
 - **Copy Task ID**: Copies the task ID to clipboard (⌘⇧C)
+- **Copy Task URL**: Copies the Motion task URL to clipboard (⌘⌥C)
 
 ## Development
 
