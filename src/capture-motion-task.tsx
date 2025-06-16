@@ -1,4 +1,4 @@
-import { Form, ActionPanel, Action, showToast, Toast, useNavigation } from "@raycast/api";
+import { Form, ActionPanel, Action, showToast, Toast, useNavigation, getPreferenceValues } from "@raycast/api";
 import { useState, useEffect } from "react";
 import { createTask, getUser, getWorkspaces, getProjects, MotionWorkspace, MotionProject } from "./motion-api";
 
@@ -13,6 +13,13 @@ interface TaskFormValues {
   projectId: string;
 }
 
+interface Preferences {
+  defaultWorkspaceId?: string;
+  defaultProjectId?: string;
+  defaultPriority?: "ASAP" | "HIGH" | "MEDIUM" | "LOW";
+  defaultDuration?: string;
+}
+
 export default function CaptureMotionTask() {
   const [isLoading, setIsLoading] = useState(false);
   const [workspaces, setWorkspaces] = useState<MotionWorkspace[]>([]);
@@ -20,6 +27,9 @@ export default function CaptureMotionTask() {
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
   const [isLoadingData, setIsLoadingData] = useState(true);
   const { pop } = useNavigation();
+
+  // Get user preferences for defaults
+  const preferences = getPreferenceValues<Preferences>();
 
   // Load workspaces on component mount
   useEffect(() => {
@@ -29,8 +39,11 @@ export default function CaptureMotionTask() {
         const workspaceList = await getWorkspaces();
         setWorkspaces(workspaceList);
         
-        // Set default workspace
-        if (workspaceList.length > 0) {
+        // Set default workspace (preference first, then first available)
+        let defaultWorkspace = preferences.defaultWorkspaceId;
+        if (defaultWorkspace && workspaceList.find(ws => ws.id === defaultWorkspace)) {
+          setSelectedWorkspaceId(defaultWorkspace);
+        } else if (workspaceList.length > 0) {
           setSelectedWorkspaceId(workspaceList[0].id);
         }
         
@@ -48,7 +61,7 @@ export default function CaptureMotionTask() {
     }
     
     loadWorkspaces();
-  }, []);
+  }, [preferences.defaultWorkspaceId]);
 
   // Load projects when workspace changes
   useEffect(() => {
@@ -73,6 +86,16 @@ export default function CaptureMotionTask() {
   }, [selectedWorkspaceId]);
 
   async function handleSubmit(values: TaskFormValues) {
+    // Quick validation to prevent unnecessary API calls
+    if (!values.name?.trim()) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Task name is required",
+        message: "Please enter a task name before submitting",
+      });
+      return;
+    }
+
     setIsLoading(true);
     
     try {
@@ -80,7 +103,7 @@ export default function CaptureMotionTask() {
       
       // Prepare task data
       const taskData: any = {
-        name: values.name,
+        name: values.name.trim(),
         priority: values.priority,
         workspaceId: values.workspaceId || selectedWorkspaceId,
       };
@@ -145,6 +168,53 @@ export default function CaptureMotionTask() {
         style: Toast.Style.Failure,
         title: "Failed to Create Task",
         message: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // Quick submit function for minimal task creation
+  async function handleQuickSubmit(values: TaskFormValues) {
+    if (!values.name?.trim()) {
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Task name is required",
+        message: "Please enter a task name before submitting",
+      });
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const quickTask = {
+        name: values.name.trim(),
+        priority: preferences.defaultPriority || "MEDIUM" as const,
+        workspaceId: selectedWorkspaceId,
+      };
+
+      // Add project if one is selected
+      if (values.projectId) {
+        (quickTask as any).projectId = values.projectId;
+      }
+
+      const task = await createTask(quickTask);
+      
+      await showToast({
+        style: Toast.Style.Success,
+        title: "Quick Task Created",
+        message: `"${task.name}" added to Motion`,
+      });
+      
+      pop();
+    } catch (error) {
+      console.error("Quick task creation error:", error);
+      
+      await showToast({
+        style: Toast.Style.Failure,
+        title: "Quick Task Failed",
+        message: error instanceof Error ? error.message : "Unknown error",
       });
     } finally {
       setIsLoading(false);
@@ -263,17 +333,31 @@ export default function CaptureMotionTask() {
       isLoading={isLoading || isLoadingData}
       actions={
         <ActionPanel>
-          <Action.SubmitForm title="Create Task" onSubmit={handleSubmit} />
-          <Action
-            title="Create Test Task"
-            shortcut={{ modifiers: ["cmd"], key: "t" }}
-            onAction={handleTestTask}
+          <Action.SubmitForm 
+            title="Create Task" 
+            onSubmit={handleSubmit}
+            icon="✅"
           />
-          <Action
-            title="Run Debug Test"
-            shortcut={{ modifiers: ["cmd"], key: "d" }}
-            onAction={handleDebugTest}
+          <Action.SubmitForm
+            title="Quick Create"
+            shortcut={{ modifiers: ["cmd"], key: "enter" }}
+            onSubmit={handleQuickSubmit}
+            icon="⚡"
           />
+          <ActionPanel.Section title="Debug">
+            <Action
+              title="Create Test Task"
+              shortcut={{ modifiers: ["cmd"], key: "t" }}
+              onAction={handleTestTask}
+              icon="🧪"
+            />
+            <Action
+              title="Run Debug Test"
+              shortcut={{ modifiers: ["cmd"], key: "d" }}
+              onAction={handleDebugTest}
+              icon="🔍"
+            />
+          </ActionPanel.Section>
         </ActionPanel>
       }
     >
@@ -282,6 +366,7 @@ export default function CaptureMotionTask() {
         title="Task Name"
         placeholder="Enter task name"
         info="The name of your task (required)"
+        autoFocus
       />
       
       <Form.TextArea
@@ -312,6 +397,7 @@ export default function CaptureMotionTask() {
         id="projectId"
         title="Project (Optional)"
         info="Select a project to organize your task"
+        defaultValue={preferences.defaultProjectId || ""}
       >
         <Form.Dropdown.Item value="" title="No Project" />
         {projects.map((project) => (
@@ -327,7 +413,7 @@ export default function CaptureMotionTask() {
       <Form.Dropdown
         id="priority"
         title="Priority"
-        defaultValue="MEDIUM"
+        defaultValue={preferences.defaultPriority || "MEDIUM"}
         info="Task priority level"
       >
         <Form.Dropdown.Item value="ASAP" title="🔴 ASAP" />
@@ -356,7 +442,8 @@ export default function CaptureMotionTask() {
       <Form.TextField
         id="duration"
         title="Duration (minutes)"
-        placeholder="30"
+        placeholder={preferences.defaultDuration || "30"}
+        defaultValue={preferences.defaultDuration || ""}
         info="Estimated time to complete the task in minutes, or 'NONE' for no duration, 'REMINDER' for reminder only"
       />
     </Form>

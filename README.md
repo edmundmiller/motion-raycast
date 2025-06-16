@@ -10,7 +10,9 @@ A Raycast extension for managing Motion tasks directly from your command bar.
 - **Intelligent Sorting**: Tasks automatically sorted by priority, due date, and creation time
 - **Quick Actions**: Open tasks in Motion, copy task names, IDs, or URLs
 - **Visual Indicators**: Priority-based icons, completion status, and scheduling issue warnings
-- **Task Creation**: Create new Motion tasks directly from Raycast with full form support
+- **Fast Task Creation**: Create new Motion tasks with speed optimizations and smart defaults
+- **Workspace & Project Selection**: Choose where your tasks go with dynamic loading
+- **Preferences Support**: Set defaults for faster task capture
 
 ## Setup
 
@@ -28,7 +30,41 @@ A Raycast extension for managing Motion tasks directly from your command bar.
    - Paste the API key you copied from Motion
    - The key will be securely stored in your system keychain
 
+4. **Optional: Set Up Speed Preferences**:
+   - Open Raycast preferences for the Motion extension
+   - Set default workspace, project, priority, and duration
+   - Use the "List Workspaces & Projects" command to find IDs
+
 ## Commands
+
+### Capture Motion Task ⚡
+- **Command**: `Capture Motion Task`
+- **Description**: Create new Motion tasks with speed optimizations
+- **Speed Features**:
+  - **Quick Create** (⌘ + Enter): Creates task with minimal fields and smart defaults
+  - **Auto-focus**: Cursor automatically in task name field
+  - **Smart Defaults**: Uses your preferences for workspace, project, priority, and duration
+  - **Form Validation**: Prevents unnecessary API calls with client-side validation
+  - **Caching**: Workspaces and projects are cached for 5 minutes to reduce load times
+- **Form Fields**:
+  - Task name (required, auto-focused)
+  - Description (optional, Markdown support)
+  - Workspace selection with icons (👥 Team, 👤 Individual)
+  - Project selection (optional, dynamically loaded)
+  - Priority with visual indicators (🔴 ASAP, 🟠 High, 🟡 Medium, 🔵 Low)
+  - Due date picker
+  - Deadline type (Hard/Soft/None)
+  - Duration in minutes
+
+### List Workspaces & Projects 📋
+- **Command**: `List Workspaces & Projects`
+- **Description**: View all workspaces and projects with their IDs
+- **Purpose**: Helps you find workspace and project IDs for setting up preferences
+- **Features**:
+  - Copy workspace IDs to clipboard
+  - Copy project IDs to clipboard
+  - View project counts and descriptions
+  - Search through workspaces and projects
 
 ### Search Tasks
 - **Command**: `Search Tasks`
@@ -43,18 +79,47 @@ A Raycast extension for managing Motion tasks directly from your command bar.
   - **Filter Dropdown**: Filter by completion status or priority level
   - **Detailed View**: Press Enter or click "Show Details" for comprehensive task information
 
-### Capture Motion Task
-- **Command**: `Capture Motion Task`
-- **Description**: Create new Motion tasks with a comprehensive form
-- **Features**:
-  - Task name and description (with Markdown support)
-  - Priority selection with visual indicators
-  - Due date picker
-  - Deadline type configuration (Hard/Soft/None)
-  - Duration settings
-  - Automatic Motion scheduling integration
+## Speed Optimization Features
 
-### Actions Available
+### 🚀 Quick Create Mode
+- Press **⌘ + Enter** in the task capture form for instant task creation
+- Uses smart defaults from your preferences
+- Skips optional fields for maximum speed
+- Perfect for rapid task capture during meetings or brainstorming
+
+### 📋 Smart Caching
+- Workspaces and projects are cached for 5 minutes
+- Reduces API calls and improves form loading speed
+- Cache automatically refreshes when needed
+
+### ⚙️ Preferences for Speed
+Set these preferences to make task creation lightning-fast:
+
+- **Default Workspace ID**: Your most-used workspace
+- **Default Project ID**: Your most-used project (optional)
+- **Default Priority**: Your preferred priority level
+- **Default Duration**: Your typical task duration in minutes
+
+### 🎯 Auto-Focus & Validation
+- Task name field is automatically focused when form opens
+- Client-side validation prevents unnecessary API calls
+- Smart error messages with troubleshooting tips
+
+## Keyboard Shortcuts
+
+### Task Capture Form
+- **Enter**: Create Task (full form submission)
+- **⌘ + Enter**: Quick Create (minimal fields, smart defaults)
+- **⌘ + T**: Create Test Task (for debugging)
+- **⌘ + D**: Run Debug Test (for troubleshooting)
+
+### Task List
+- **Enter**: Show task details
+- **⌘ + C**: Copy task name
+- **⌘ + ⇧ + C**: Copy task ID
+- **⌘ + ⌥ + C**: Copy task URL
+
+## Actions Available
 - **Show Details**: Opens detailed task view with full metadata (Enter)
 - **Open in Motion**: Opens the task in the Motion web app
 - **Copy Task Name**: Copies the task name to clipboard (⌘C)

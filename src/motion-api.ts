@@ -169,8 +169,29 @@ export async function getUser(): Promise<MotionUser> {
   return makeMotionRequest<MotionUser>("/users/me");
 }
 
+// Simple cache to avoid repeated API calls
+const cache = {
+  workspaces: null as MotionWorkspace[] | null,
+  workspacesCacheTime: 0,
+  projects: new Map<string, { data: MotionProject[], cacheTime: number }>(),
+};
+
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 export async function getWorkspaces(): Promise<MotionWorkspace[]> {
+  // Check cache first
+  const now = Date.now();
+  if (cache.workspaces && (now - cache.workspacesCacheTime) < CACHE_DURATION) {
+    console.log("📋 Using cached workspaces");
+    return cache.workspaces;
+  }
+
   const response = await makeMotionRequest<MotionWorkspacesResponse>("/workspaces");
+  
+  // Update cache
+  cache.workspaces = response.workspaces;
+  cache.workspacesCacheTime = now;
+  
   return response.workspaces;
 }
 
@@ -323,6 +344,16 @@ export async function updateTask(taskId: string, updates: Partial<MotionTask>): 
 }
 
 export async function getProjects(workspaceId?: string): Promise<MotionProject[]> {
+  const cacheKey = workspaceId || "all";
+  const now = Date.now();
+  
+  // Check cache first
+  const cachedProjects = cache.projects.get(cacheKey);
+  if (cachedProjects && (now - cachedProjects.cacheTime) < CACHE_DURATION) {
+    console.log("📋 Using cached projects for workspace:", workspaceId);
+    return cachedProjects.data;
+  }
+
   const searchParams = new URLSearchParams();
   if (workspaceId) {
     searchParams.append("workspaceId", workspaceId);
@@ -330,5 +361,12 @@ export async function getProjects(workspaceId?: string): Promise<MotionProject[]
   
   const endpoint = `/projects${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
   const response = await makeMotionRequest<MotionProjectsResponse>(endpoint);
+  
+  // Update cache
+  cache.projects.set(cacheKey, {
+    data: response.projects,
+    cacheTime: now,
+  });
+  
   return response.projects;
 } 

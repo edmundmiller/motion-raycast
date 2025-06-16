@@ -26,6 +26,12 @@
       "mode": "view"
     },
     {
+      "name": "list-workspaces-projects",
+      "title": "List Workspaces & Projects",
+      "description": "View all workspaces and projects with their IDs for setting up preferences",
+      "mode": "view"
+    },
+    {
       "name": "create-obsidian-note",
       "title": "Create Obsidian Note",
       "description": "Create an Obsidian Note for the current calendar event",
@@ -46,6 +52,54 @@
       "required": true,
       "title": "Motion API Key",
       "description": "Your Motion API key from https://app.usemotion.com/settings/api"
+    },
+    {
+      "name": "defaultWorkspaceId",
+      "type": "textfield",
+      "required": false,
+      "title": "Default Workspace ID",
+      "description": "Default workspace ID for new tasks (optional - will use first workspace if not set)"
+    },
+    {
+      "name": "defaultProjectId",
+      "type": "textfield",
+      "required": false,
+      "title": "Default Project ID",
+      "description": "Default project ID for new tasks (optional)"
+    },
+    {
+      "name": "defaultPriority",
+      "type": "dropdown",
+      "required": false,
+      "title": "Default Priority",
+      "description": "Default priority for new tasks",
+      "default": "MEDIUM",
+      "data": [
+        {
+          "title": "🔴 ASAP",
+          "value": "ASAP"
+        },
+        {
+          "title": "🟠 High",
+          "value": "HIGH"
+        },
+        {
+          "title": "🟡 Medium",
+          "value": "MEDIUM"
+        },
+        {
+          "title": "🔵 Low",
+          "value": "LOW"
+        }
+      ]
+    },
+    {
+      "name": "defaultDuration",
+      "type": "textfield",
+      "required": false,
+      "title": "Default Duration (minutes)",
+      "description": "Default duration for new tasks in minutes (e.g., 30, 60, 120)",
+      "placeholder": "30"
     }
   ],
   "dependencies": {
