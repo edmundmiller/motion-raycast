@@ -39,6 +39,15 @@
       "description": "Create a new motion task with the given parameters"
     }
   ],
+  "preferences": [
+    {
+      "name": "apiKey",
+      "type": "password",
+      "required": true,
+      "title": "Motion API Key",
+      "description": "Your Motion API key from https://app.usemotion.com/settings/api"
+    }
+  ],
   "dependencies": {
     "@raycast/api": "^1.100.2",
     "@raycast/utils": "^1.17.0"
