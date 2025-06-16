@@ -92,6 +92,28 @@ export interface MotionWorkspacesResponse {
   workspaces: MotionWorkspace[];
 }
 
+export interface MotionProject {
+  id: string;
+  name: string;
+  description: string;
+  workspaceId: string;
+  status?: {
+    name: string;
+    isDefaultStatus: boolean;
+    isResolvedStatus: boolean;
+  };
+  createdTime: string;
+  updatedTime: string;
+}
+
+export interface MotionProjectsResponse {
+  meta: {
+    nextCursor?: string;
+    pageSize: number;
+  };
+  projects: MotionProject[];
+}
+
 const BASE_URL = "https://api.usemotion.com/v1";
 
 async function makeMotionRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -298,4 +320,15 @@ export async function updateTask(taskId: string, updates: Partial<MotionTask>): 
     method: "PATCH",
     body: JSON.stringify(updates),
   });
+}
+
+export async function getProjects(workspaceId?: string): Promise<MotionProject[]> {
+  const searchParams = new URLSearchParams();
+  if (workspaceId) {
+    searchParams.append("workspaceId", workspaceId);
+  }
+  
+  const endpoint = `/projects${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+  const response = await makeMotionRequest<MotionProjectsResponse>(endpoint);
+  return response.projects;
 } 

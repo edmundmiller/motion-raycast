@@ -1,6 +1,6 @@
 import { Form, ActionPanel, Action, showToast, Toast, useNavigation } from "@raycast/api";
-import { useState } from "react";
-import { createTask, getUser, getWorkspaces } from "./motion-api";
+import { useState, useEffect } from "react";
+import { createTask, getUser, getWorkspaces, getProjects, MotionWorkspace, MotionProject } from "./motion-api";
 
 interface TaskFormValues {
   name: string;
@@ -9,11 +9,68 @@ interface TaskFormValues {
   dueDate: Date | null;
   deadlineType: "HARD" | "SOFT" | "NONE";
   duration: string;
+  workspaceId: string;
+  projectId: string;
 }
 
 export default function CaptureMotionTask() {
   const [isLoading, setIsLoading] = useState(false);
+  const [workspaces, setWorkspaces] = useState<MotionWorkspace[]>([]);
+  const [projects, setProjects] = useState<MotionProject[]>([]);
+  const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
+  const [isLoadingData, setIsLoadingData] = useState(true);
   const { pop } = useNavigation();
+
+  // Load workspaces on component mount
+  useEffect(() => {
+    async function loadWorkspaces() {
+      try {
+        console.log("🔄 Loading workspaces...");
+        const workspaceList = await getWorkspaces();
+        setWorkspaces(workspaceList);
+        
+        // Set default workspace
+        if (workspaceList.length > 0) {
+          setSelectedWorkspaceId(workspaceList[0].id);
+        }
+        
+        console.log("✅ Loaded workspaces:", workspaceList.length);
+      } catch (error) {
+        console.error("❌ Failed to load workspaces:", error);
+        await showToast({
+          style: Toast.Style.Failure,
+          title: "Failed to Load Workspaces",
+          message: error instanceof Error ? error.message : "Unknown error",
+        });
+      } finally {
+        setIsLoadingData(false);
+      }
+    }
+    
+    loadWorkspaces();
+  }, []);
+
+  // Load projects when workspace changes
+  useEffect(() => {
+    async function loadProjects() {
+      if (!selectedWorkspaceId) {
+        setProjects([]);
+        return;
+      }
+      
+      try {
+        console.log("🔄 Loading projects for workspace:", selectedWorkspaceId);
+        const projectList = await getProjects(selectedWorkspaceId);
+        setProjects(projectList);
+        console.log("✅ Loaded projects:", projectList.length);
+      } catch (error) {
+        console.error("❌ Failed to load projects:", error);
+        setProjects([]);
+      }
+    }
+    
+    loadProjects();
+  }, [selectedWorkspaceId]);
 
   async function handleSubmit(values: TaskFormValues) {
     setIsLoading(true);
@@ -25,11 +82,16 @@ export default function CaptureMotionTask() {
       const taskData: any = {
         name: values.name,
         priority: values.priority,
+        workspaceId: values.workspaceId || selectedWorkspaceId,
       };
 
       // Add optional fields only if they have values
       if (values.description?.trim()) {
         taskData.description = values.description.trim();
+      }
+
+      if (values.projectId) {
+        taskData.projectId = values.projectId;
       }
 
       if (values.dueDate) {
@@ -98,6 +160,7 @@ export default function CaptureMotionTask() {
       const testTask = {
         name: "Test Task from Raycast",
         priority: "MEDIUM" as const,
+        workspaceId: selectedWorkspaceId,
       };
 
       console.log("Test task data:", JSON.stringify(testTask, null, 2));
@@ -153,6 +216,7 @@ export default function CaptureMotionTask() {
       const testTask = {
         name: "Debug Test Task - " + new Date().toISOString(),
         priority: "LOW" as const,
+        workspaceId: selectedWorkspaceId,
       };
       
       const createdTask = await createTask(testTask);
@@ -196,7 +260,7 @@ export default function CaptureMotionTask() {
 
   return (
     <Form
-      isLoading={isLoading}
+      isLoading={isLoading || isLoadingData}
       actions={
         <ActionPanel>
           <Action.SubmitForm title="Create Task" onSubmit={handleSubmit} />
@@ -226,6 +290,39 @@ export default function CaptureMotionTask() {
         placeholder="Enter task description (optional)"
         info="Detailed description of the task using Markdown"
       />
+
+      <Form.Dropdown
+        id="workspaceId"
+        title="Workspace"
+        value={selectedWorkspaceId}
+        onChange={setSelectedWorkspaceId}
+        info="Select which workspace to create the task in"
+      >
+        {workspaces.map((workspace) => (
+          <Form.Dropdown.Item
+            key={workspace.id}
+            value={workspace.id}
+            title={workspace.name}
+            icon={workspace.type === "TEAM" ? "👥" : "👤"}
+          />
+        ))}
+      </Form.Dropdown>
+
+      <Form.Dropdown
+        id="projectId"
+        title="Project (Optional)"
+        info="Select a project to organize your task"
+      >
+        <Form.Dropdown.Item value="" title="No Project" />
+        {projects.map((project) => (
+          <Form.Dropdown.Item
+            key={project.id}
+            value={project.id}
+            title={project.name}
+            icon="📁"
+          />
+        ))}
+      </Form.Dropdown>
       
       <Form.Dropdown
         id="priority"
