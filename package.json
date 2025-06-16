@@ -32,6 +32,12 @@
       "mode": "view"
     },
     {
+      "name": "quick-task-status",
+      "title": "Quick Task Status",
+      "description": "Quickly update task statuses with keyboard shortcuts",
+      "mode": "view"
+    },
+    {
       "name": "create-obsidian-note",
       "title": "Create Obsidian Note",
       "description": "Create an Obsidian Note for the current calendar event",
