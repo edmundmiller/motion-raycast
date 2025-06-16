@@ -1,4 +1,4 @@
-import { Form, ActionPanel, Action, showToast, Toast, useNavigation, getPreferenceValues } from "@raycast/api";
+import { Form, ActionPanel, Action, showToast, Toast, useNavigation, getPreferenceValues, LocalStorage } from "@raycast/api";
 import { useState, useEffect } from "react";
 import { createTask, getUser, getWorkspaces, getProjects, MotionWorkspace, MotionProject } from "./motion-api";
 
@@ -26,10 +26,38 @@ export default function CaptureMotionTask() {
   const [projects, setProjects] = useState<MotionProject[]>([]);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<string>("");
   const [isLoadingData, setIsLoadingData] = useState(true);
+  const [localDefaults, setLocalDefaults] = useState<{
+    workspaceId?: string;
+    projectId?: string;
+    priority?: "ASAP" | "HIGH" | "MEDIUM" | "LOW";
+    duration?: string;
+  }>({});
   const { pop } = useNavigation();
 
   // Get user preferences for defaults
   const preferences = getPreferenceValues<Preferences>();
+
+  // Load local storage defaults
+  useEffect(() => {
+    async function loadLocalDefaults() {
+      try {
+        const workspaceId = await LocalStorage.getItem<string>("defaultWorkspaceId");
+        const projectId = await LocalStorage.getItem<string>("defaultProjectId");
+        const priority = await LocalStorage.getItem<string>("defaultPriority") as "ASAP" | "HIGH" | "MEDIUM" | "LOW" | undefined;
+        const duration = await LocalStorage.getItem<string>("defaultDuration");
+        setLocalDefaults({
+          workspaceId: workspaceId || undefined,
+          projectId: projectId || undefined,
+          priority: priority || undefined,
+          duration: duration || undefined,
+        });
+      } catch (error) {
+        console.log("No local defaults found");
+      }
+    }
+    
+    loadLocalDefaults();
+  }, []);
 
   // Load workspaces on component mount
   useEffect(() => {
@@ -39,8 +67,8 @@ export default function CaptureMotionTask() {
         const workspaceList = await getWorkspaces();
         setWorkspaces(workspaceList);
         
-        // Set default workspace (preference first, then first available)
-        let defaultWorkspace = preferences.defaultWorkspaceId;
+        // Set default workspace (preference first, then local storage, then first available)
+        let defaultWorkspace = preferences.defaultWorkspaceId || localDefaults.workspaceId;
         if (defaultWorkspace && workspaceList.find(ws => ws.id === defaultWorkspace)) {
           setSelectedWorkspaceId(defaultWorkspace);
         } else if (workspaceList.length > 0) {
@@ -61,7 +89,7 @@ export default function CaptureMotionTask() {
     }
     
     loadWorkspaces();
-  }, [preferences.defaultWorkspaceId]);
+  }, [preferences.defaultWorkspaceId, localDefaults.workspaceId]);
 
   // Load projects when workspace changes
   useEffect(() => {
@@ -190,13 +218,27 @@ export default function CaptureMotionTask() {
     try {
       const quickTask = {
         name: values.name.trim(),
-        priority: preferences.defaultPriority || "MEDIUM" as const,
+        priority: (preferences.defaultPriority || localDefaults.priority || "MEDIUM") as "ASAP" | "HIGH" | "MEDIUM" | "LOW",
         workspaceId: selectedWorkspaceId,
       };
 
-      // Add project if one is selected
-      if (values.projectId) {
-        (quickTask as any).projectId = values.projectId;
+      // Add project if one is selected or set as default
+      const defaultProjectId = values.projectId || preferences.defaultProjectId || localDefaults.projectId;
+      if (defaultProjectId) {
+        (quickTask as any).projectId = defaultProjectId;
+      }
+
+      // Add duration if set as default
+      const defaultDuration = preferences.defaultDuration || localDefaults.duration;
+      if (defaultDuration) {
+        if (defaultDuration === "NONE" || defaultDuration === "REMINDER") {
+          (quickTask as any).duration = defaultDuration;
+        } else {
+          const durationNum = parseInt(defaultDuration);
+          if (!isNaN(durationNum) && durationNum > 0) {
+            (quickTask as any).duration = durationNum;
+          }
+        }
       }
 
       const task = await createTask(quickTask);
@@ -397,7 +439,7 @@ export default function CaptureMotionTask() {
         id="projectId"
         title="Project (Optional)"
         info="Select a project to organize your task"
-        defaultValue={preferences.defaultProjectId || ""}
+        defaultValue={preferences.defaultProjectId || localDefaults.projectId || ""}
       >
         <Form.Dropdown.Item value="" title="No Project" />
         {projects.map((project) => (
@@ -413,7 +455,7 @@ export default function CaptureMotionTask() {
       <Form.Dropdown
         id="priority"
         title="Priority"
-        defaultValue={preferences.defaultPriority || "MEDIUM"}
+        defaultValue={preferences.defaultPriority || localDefaults.priority || "MEDIUM"}
         info="Task priority level"
       >
         <Form.Dropdown.Item value="ASAP" title="🔴 ASAP" />
@@ -442,8 +484,8 @@ export default function CaptureMotionTask() {
       <Form.TextField
         id="duration"
         title="Duration (minutes)"
-        placeholder={preferences.defaultDuration || "30"}
-        defaultValue={preferences.defaultDuration || ""}
+        placeholder={preferences.defaultDuration || localDefaults.duration || "30"}
+        defaultValue={preferences.defaultDuration || localDefaults.duration || ""}
         info="Estimated time to complete the task in minutes, or 'NONE' for no duration, 'REMINDER' for reminder only"
       />
     </Form>

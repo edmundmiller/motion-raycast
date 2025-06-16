@@ -61,10 +61,28 @@ A Raycast extension for managing Motion tasks directly from your command bar.
 - **Description**: View all workspaces and projects with their IDs
 - **Purpose**: Helps you find workspace and project IDs for setting up preferences
 - **Features**:
-  - Copy workspace IDs to clipboard
-  - Copy project IDs to clipboard
-  - View project counts and descriptions
-  - Search through workspaces and projects
+  - **One-Click Preference Setup**: Set default workspace, project, priority, and duration with single clicks
+  - **Copy IDs**: Copy workspace and project IDs to clipboard for manual preference setup
+  - **Quick Setup Sections**: Organized sections for priorities (🔴 ASAP, 🟠 High, 🟡 Medium, 🔵 Low) and durations (15, 30, 60, 120 minutes)
+  - **Visual Organization**: View project counts and descriptions
+  - **Search**: Search through workspaces and projects
+  - **Preference Management**: Clear defaults and access Raycast preferences
+
+### Preference Setup Options
+
+#### Option 1: One-Click Setup (Recommended)
+1. Run **"List Workspaces & Projects"**
+2. Click on any workspace to **"Set as Default Workspace"**
+3. Click on any project to **"Set as Default Project"** 
+4. Choose a priority from the **"Set Default Priority"** section
+5. Choose a duration from the **"Set Default Duration"** section
+6. Done! Your preferences are now set for lightning-fast task creation
+
+#### Option 2: Manual Setup
+1. Run **"List Workspaces & Projects"** to find IDs
+2. Copy workspace and project IDs
+3. Open Raycast Preferences → Extensions → Motion
+4. Paste the IDs and set your preferred priority and duration
 
 ### Search Tasks
 - **Command**: `Search Tasks`
@@ -112,6 +130,12 @@ Set these preferences to make task creation lightning-fast:
 - **⌘ + Enter**: Quick Create (minimal fields, smart defaults)
 - **⌘ + T**: Create Test Task (for debugging)
 - **⌘ + D**: Run Debug Test (for troubleshooting)
+
+### List Workspaces & Projects
+- **Enter**: Set as Default (workspace/project/priority/duration)
+- **⌘ + C**: Copy ID to clipboard
+- **⌘ + ⇧ + C**: Copy Workspace ID (from project view)
+- **⌘ + Backspace**: Clear Default Project
 
 ### Task List
 - **Enter**: Show task details
