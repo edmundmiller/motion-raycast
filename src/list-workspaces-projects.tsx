@@ -14,13 +14,13 @@ export default function ListWorkspacesProjects() {
     async function loadData() {
       try {
         console.log("🔄 Loading workspaces and projects...");
-        
+
         // Get workspaces first
         const workspaceList = await getWorkspaces();
-        
+
         // Get projects for each workspace
         const workspacesWithProjects: WorkspaceWithProjects[] = [];
-        
+
         for (const workspace of workspaceList) {
           try {
             const projects = await getProjects(workspace.id);
@@ -36,7 +36,7 @@ export default function ListWorkspacesProjects() {
             });
           }
         }
-        
+
         setWorkspaces(workspacesWithProjects);
         console.log("✅ Loaded all workspaces and projects");
       } catch (error) {
@@ -50,7 +50,7 @@ export default function ListWorkspacesProjects() {
         setIsLoading(false);
       }
     }
-    
+
     loadData();
   }, []);
 
@@ -137,10 +137,10 @@ export default function ListWorkspacesProjects() {
     try {
       await LocalStorage.setItem("defaultPriority", priority);
       const priorityEmoji = {
-        "ASAP": "🔴",
-        "HIGH": "🟠", 
-        "MEDIUM": "🟡",
-        "LOW": "🔵"
+        ASAP: "🔴",
+        HIGH: "🟠",
+        MEDIUM: "🟡",
+        LOW: "🔵",
       };
       await showToast({
         style: Toast.Style.Success,
@@ -182,11 +182,7 @@ export default function ListWorkspacesProjects() {
           icon="⚙️"
           actions={
             <ActionPanel>
-              <Action
-                title="Open Preferences Guide"
-                onAction={openRaycastPreferences}
-                icon="⚙️"
-              />
+              <Action title="Open Preferences Guide" onAction={openRaycastPreferences} icon="⚙️" />
               <Action
                 title="Clear Default Project"
                 onAction={clearDefaultProject}
@@ -205,11 +201,7 @@ export default function ListWorkspacesProjects() {
           icon="🔴"
           actions={
             <ActionPanel>
-              <Action
-                title="Set as Default Priority"
-                onAction={() => setDefaultPriority("ASAP")}
-                icon="⭐"
-              />
+              <Action title="Set as Default Priority" onAction={() => setDefaultPriority("ASAP")} icon="⭐" />
             </ActionPanel>
           }
         />
@@ -219,11 +211,7 @@ export default function ListWorkspacesProjects() {
           icon="🟠"
           actions={
             <ActionPanel>
-              <Action
-                title="Set as Default Priority"
-                onAction={() => setDefaultPriority("HIGH")}
-                icon="⭐"
-              />
+              <Action title="Set as Default Priority" onAction={() => setDefaultPriority("HIGH")} icon="⭐" />
             </ActionPanel>
           }
         />
@@ -233,11 +221,7 @@ export default function ListWorkspacesProjects() {
           icon="🟡"
           actions={
             <ActionPanel>
-              <Action
-                title="Set as Default Priority"
-                onAction={() => setDefaultPriority("MEDIUM")}
-                icon="⭐"
-              />
+              <Action title="Set as Default Priority" onAction={() => setDefaultPriority("MEDIUM")} icon="⭐" />
             </ActionPanel>
           }
         />
@@ -247,11 +231,7 @@ export default function ListWorkspacesProjects() {
           icon="🔵"
           actions={
             <ActionPanel>
-              <Action
-                title="Set as Default Priority"
-                onAction={() => setDefaultPriority("LOW")}
-                icon="⭐"
-              />
+              <Action title="Set as Default Priority" onAction={() => setDefaultPriority("LOW")} icon="⭐" />
             </ActionPanel>
           }
         />
@@ -264,11 +244,7 @@ export default function ListWorkspacesProjects() {
           icon="⏱️"
           actions={
             <ActionPanel>
-              <Action
-                title="Set as Default Duration"
-                onAction={() => setDefaultDuration("15")}
-                icon="⭐"
-              />
+              <Action title="Set as Default Duration" onAction={() => setDefaultDuration("15")} icon="⭐" />
             </ActionPanel>
           }
         />
@@ -278,11 +254,7 @@ export default function ListWorkspacesProjects() {
           icon="⏱️"
           actions={
             <ActionPanel>
-              <Action
-                title="Set as Default Duration"
-                onAction={() => setDefaultDuration("30")}
-                icon="⭐"
-              />
+              <Action title="Set as Default Duration" onAction={() => setDefaultDuration("30")} icon="⭐" />
             </ActionPanel>
           }
         />
@@ -292,11 +264,7 @@ export default function ListWorkspacesProjects() {
           icon="⏱️"
           actions={
             <ActionPanel>
-              <Action
-                title="Set as Default Duration"
-                onAction={() => setDefaultDuration("60")}
-                icon="⭐"
-              />
+              <Action title="Set as Default Duration" onAction={() => setDefaultDuration("60")} icon="⭐" />
             </ActionPanel>
           }
         />
@@ -306,33 +274,22 @@ export default function ListWorkspacesProjects() {
           icon="⏱️"
           actions={
             <ActionPanel>
-              <Action
-                title="Set as Default Duration"
-                onAction={() => setDefaultDuration("120")}
-                icon="⭐"
-              />
+              <Action title="Set as Default Duration" onAction={() => setDefaultDuration("120")} icon="⭐" />
             </ActionPanel>
           }
         />
       </List.Section>
-      
+
       {workspaces.map((workspace) => (
         <List.Section key={workspace.id} title={`${workspace.name} (${workspace.type})`}>
           <List.Item
             title={workspace.name}
             subtitle={`Workspace ID: ${workspace.id}`}
             icon={workspace.type === "TEAM" ? "👥" : "👤"}
-            accessories={[
-              { text: `${workspace.projects.length} projects` },
-              { text: workspace.type },
-            ]}
+            accessories={[{ text: `${workspace.projects.length} projects` }, { text: workspace.type }]}
             actions={
               <ActionPanel>
-                <Action
-                  title="Set as Default Workspace"
-                  onAction={() => setDefaultWorkspace(workspace)}
-                  icon="⭐"
-                />
+                <Action title="Set as Default Workspace" onAction={() => setDefaultWorkspace(workspace)} icon="⭐" />
                 <ActionPanel.Section title="Copy">
                   <Action
                     title="Copy Workspace ID"
@@ -349,9 +306,7 @@ export default function ListWorkspacesProjects() {
               key={project.id}
               title={`  📁 ${project.name}`}
               subtitle={`Project ID: ${project.id}`}
-              accessories={[
-                { text: project.description ? "Has description" : "No description" },
-              ]}
+              accessories={[{ text: project.description ? "Has description" : "No description" }]}
               actions={
                 <ActionPanel>
                   <Action
@@ -381,4 +336,4 @@ export default function ListWorkspacesProjects() {
       ))}
     </List>
   );
-} 
+}

@@ -15,17 +15,17 @@ export default function SearchProject() {
     async function loadProjects() {
       try {
         console.log("🔄 Loading projects...");
-        
+
         // Get workspaces first
         const workspaces = await getWorkspaces();
-        
+
         // Get projects for each workspace
         const allProjects: ProjectWithWorkspace[] = [];
-        
+
         for (const workspace of workspaces) {
           try {
             const workspaceProjects = await getProjects(workspace.id);
-            const projectsWithWorkspace = workspaceProjects.map(project => ({
+            const projectsWithWorkspace = workspaceProjects.map((project) => ({
               ...project,
               workspace,
             }));
@@ -34,7 +34,7 @@ export default function SearchProject() {
             console.error(`Failed to load projects for workspace ${workspace.name}:`, error);
           }
         }
-        
+
         setProjects(allProjects);
         console.log(`✅ Loaded ${allProjects.length} projects from ${workspaces.length} workspaces`);
       } catch (error) {
@@ -48,60 +48,72 @@ export default function SearchProject() {
         setIsLoading(false);
       }
     }
-    
+
     loadProjects();
   }, []);
 
   // Helper function to determine if a project is active (not completed/cancelled)
   function isActiveProject(project: MotionProject): boolean {
     if (!project.status) return true; // If no status, assume active
-    
+
     const statusName = project.status.name.toLowerCase();
-    
+
     // Filter out completed, cancelled, done, finished, archived projects
     const inactiveStatuses = [
-      'completed', 'complete', 'done', 'finished', 'cancelled', 'canceled', 
-      'archived', 'closed', 'resolved', 'ended'
+      "completed",
+      "complete",
+      "done",
+      "finished",
+      "cancelled",
+      "canceled",
+      "archived",
+      "closed",
+      "resolved",
+      "ended",
     ];
-    
-    return !inactiveStatuses.some(inactive => statusName.includes(inactive)) && 
-           !project.status.isResolvedStatus;
+
+    return !inactiveStatuses.some((inactive) => statusName.includes(inactive)) && !project.status.isResolvedStatus;
   }
 
   // Helper function to get project priority for sorting
   function getProjectSortPriority(project: MotionProject): number {
     if (!project.status) return 3; // Default priority for projects without status
-    
+
     const statusName = project.status.name.toLowerCase();
-    
+
     // Priority order: in-progress (1), todo/planned (2), backlog (3), others (4)
-    if (statusName.includes('progress') || statusName.includes('active') || statusName.includes('current')) {
+    if (statusName.includes("progress") || statusName.includes("active") || statusName.includes("current")) {
       return 1; // In Progress - highest priority
     }
-    if (statusName.includes('todo') || statusName.includes('planned') || statusName.includes('ready') || statusName.includes('next')) {
+    if (
+      statusName.includes("todo") ||
+      statusName.includes("planned") ||
+      statusName.includes("ready") ||
+      statusName.includes("next")
+    ) {
       return 2; // Todo/Planned - second priority
     }
-    if (statusName.includes('backlog') || statusName.includes('future') || statusName.includes('someday')) {
+    if (statusName.includes("backlog") || statusName.includes("future") || statusName.includes("someday")) {
       return 3; // Backlog - third priority
     }
-    
+
     // For default status, put it in todo category
     if (project.status.isDefaultStatus) {
       return 2;
     }
-    
+
     return 4; // Other statuses - lowest priority
   }
 
   // Filter and sort projects
   const filteredAndSortedProjects = projects
-    .filter(project => {
+    .filter((project) => {
       // First filter by active status
       if (!isActiveProject(project)) return false;
-      
+
       // Then filter by search text
       if (!searchText) return true;
-      
+
       const searchLower = searchText.toLowerCase();
       return (
         project.name.toLowerCase().includes(searchLower) ||
@@ -113,11 +125,11 @@ export default function SearchProject() {
       // Sort by priority first
       const priorityA = getProjectSortPriority(a);
       const priorityB = getProjectSortPriority(b);
-      
+
       if (priorityA !== priorityB) {
         return priorityA - priorityB;
       }
-      
+
       // If same priority, sort by updated date (most recent first)
       return new Date(b.updatedTime).getTime() - new Date(a.updatedTime).getTime();
     });
@@ -142,58 +154,67 @@ export default function SearchProject() {
 
   function getProjectStatusIcon(project: MotionProject): string {
     if (!project.status) return "📋";
-    
+
     const statusName = project.status.name.toLowerCase();
-    
+
     // In Progress projects
-    if (statusName.includes('progress') || statusName.includes('active') || statusName.includes('current')) {
+    if (statusName.includes("progress") || statusName.includes("active") || statusName.includes("current")) {
       return "🚀"; // In Progress
     }
-    
-    // Todo/Planned projects  
-    if (statusName.includes('todo') || statusName.includes('planned') || statusName.includes('ready') || statusName.includes('next')) {
+
+    // Todo/Planned projects
+    if (
+      statusName.includes("todo") ||
+      statusName.includes("planned") ||
+      statusName.includes("ready") ||
+      statusName.includes("next")
+    ) {
       return "📝"; // Todo/Planned
     }
-    
+
     // Backlog projects
-    if (statusName.includes('backlog') || statusName.includes('future') || statusName.includes('someday')) {
+    if (statusName.includes("backlog") || statusName.includes("future") || statusName.includes("someday")) {
       return "📚"; // Backlog
     }
-    
+
     // Default status
     if (project.status.isDefaultStatus) {
       return "📝"; // Treat default as todo
     }
-    
+
     return "📋"; // Other statuses
   }
 
   function getProjectStatusSection(project: MotionProject): string {
     const priority = getProjectSortPriority(project);
-    
+
     switch (priority) {
-      case 1: return "🚀 In Progress";
-      case 2: return "📝 Todo & Planned";
-      case 3: return "📚 Backlog";
-      default: return "📋 Other";
+      case 1:
+        return "🚀 In Progress";
+      case 2:
+        return "📝 Todo & Planned";
+      case 3:
+        return "📚 Backlog";
+      default:
+        return "📋 Other";
     }
   }
 
   function formatProjectDescription(description: string): string {
     // Remove HTML tags and decode HTML entities for display
     return description
-      .replace(/<[^>]*>/g, '') // Remove HTML tags
-      .replace(/&nbsp;/g, ' ')
-      .replace(/&amp;/g, '&')
-      .replace(/&lt;/g, '<')
-      .replace(/&gt;/g, '>')
+      .replace(/<[^>]*>/g, "") // Remove HTML tags
+      .replace(/&nbsp;/g, " ")
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
       .replace(/&quot;/g, '"')
       .trim();
   }
 
   function ProjectDetail({ project }: { project: ProjectWithWorkspace }) {
     const formattedDescription = formatProjectDescription(project.description);
-    
+
     const markdown = `
 # ${project.name}
 
@@ -239,14 +260,17 @@ ${formattedDescription || "No description available"}
   }
 
   // Group projects by section for better organization
-  const projectSections = filteredAndSortedProjects.reduce((acc, project) => {
-    const section = getProjectStatusSection(project);
-    if (!acc[section]) {
-      acc[section] = [];
-    }
-    acc[section].push(project);
-    return acc;
-  }, {} as Record<string, ProjectWithWorkspace[]>);
+  const projectSections = filteredAndSortedProjects.reduce(
+    (acc, project) => {
+      const section = getProjectStatusSection(project);
+      if (!acc[section]) {
+        acc[section] = [];
+      }
+      acc[section].push(project);
+      return acc;
+    },
+    {} as Record<string, ProjectWithWorkspace[]>,
+  );
 
   return (
     <List
@@ -263,7 +287,7 @@ ${formattedDescription || "No description available"}
           description={searchText ? "Try adjusting your search terms" : "No active projects available"}
         />
       )}
-      
+
       {Object.entries(projectSections).map(([sectionTitle, sectionProjects]) => (
         <List.Section key={sectionTitle} title={sectionTitle}>
           {sectionProjects.map((project) => (
@@ -274,15 +298,11 @@ ${formattedDescription || "No description available"}
               subtitle={project.workspace.name}
               accessories={[
                 { text: project.status?.name || "No status" },
-                { text: new Date(project.updatedTime).toLocaleDateString() }
+                { text: new Date(project.updatedTime).toLocaleDateString() },
               ]}
               actions={
                 <ActionPanel>
-                  <Action.Push
-                    title="Show Details"
-                    target={<ProjectDetail project={project} />}
-                    icon={Icon.Eye}
-                  />
+                  <Action.Push title="Show Details" target={<ProjectDetail project={project} />} icon={Icon.Eye} />
                   <ActionPanel.Section title="Copy">
                     <Action
                       title="Copy Project ID"

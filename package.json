@@ -38,19 +38,13 @@
       "mode": "view"
     },
     {
-      "name": "create-obsidian-note",
-      "title": "Create Obsidian Note",
-      "description": "Create an Obsidian Note for the current calendar event",
-      "mode": "no-view"
+      "name": "new-tasks-today",
+      "title": "New Tasks for Today",
+      "description": "View all tasks created today",
+      "mode": "view"
     }
   ],
-  "tools": [
-    {
-      "name": "create-a-motion-task",
-      "title": "Create a Motion task",
-      "description": "Create a new motion task with the given parameters"
-    }
-  ],
+  "tools": [],
   "preferences": [
     {
       "name": "apiKey",

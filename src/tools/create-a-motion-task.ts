@@ -25,7 +25,7 @@ export default async function createMotionTask(
   priority?: "ASAP" | "HIGH" | "MEDIUM" | "LOW",
   durationMinutes?: number,
   dueDate?: string,
-  projectName?: string
+  projectName?: string,
 ): Promise<string> {
   try {
     console.log("🤖 AI Tool: Creating Motion task", {
@@ -90,11 +90,11 @@ export default async function createMotionTask(
       try {
         const projects = await getProjects(taskData.workspaceId);
         const matchingProject = projects.find(
-          (project) => 
+          (project) =>
             project.name.toLowerCase().includes(projectName.toLowerCase()) ||
-            projectName.toLowerCase().includes(project.name.toLowerCase())
+            projectName.toLowerCase().includes(project.name.toLowerCase()),
         );
-        
+
         if (matchingProject) {
           taskData.projectId = matchingProject.id;
           console.log(`📁 Found matching project: ${matchingProject.name} (${matchingProject.id})`);
@@ -115,38 +115,38 @@ export default async function createMotionTask(
 
     // Return a success message with task details
     let result = `✅ Successfully created task: "${createdTask.name}"`;
-    
+
     if (createdTask.project) {
       result += `\n📁 Project: ${createdTask.project.Name}`;
     }
-    
+
     if (createdTask.priority) {
-      const priorityEmoji = {
-        ASAP: "🔴",
-        HIGH: "🟠", 
-        MEDIUM: "🟡",
-        LOW: "🔵"
-      }[createdTask.priority] || "⚪";
+      const priorityEmoji =
+        {
+          ASAP: "🔴",
+          HIGH: "🟠",
+          MEDIUM: "🟡",
+          LOW: "🔵",
+        }[createdTask.priority] || "⚪";
       result += `\n${priorityEmoji} Priority: ${createdTask.priority}`;
     }
-    
+
     if (createdTask.duration && createdTask.duration !== "NONE") {
       result += `\n⏱️ Duration: ${createdTask.duration} minutes`;
     }
-    
+
     if (createdTask.workspace) {
       result += `\n🏢 Workspace: ${createdTask.workspace.name}`;
     }
 
     return result;
-
   } catch (error) {
     console.error("❌ Failed to create Motion task:", error);
-    
+
     let errorMessage = "Failed to create Motion task";
     if (error instanceof Error) {
       errorMessage += `: ${error.message}`;
-      
+
       // Provide helpful troubleshooting tips
       if (error.message.includes("workspaceId")) {
         errorMessage += "\n\n💡 Tip: Make sure your Motion API key has access to at least one workspace.";
@@ -156,7 +156,7 @@ export default async function createMotionTask(
         errorMessage += "\n\n💡 Tip: Check that the task name is valid and all parameters are correct.";
       }
     }
-    
+
     throw new Error(errorMessage);
   }
 }

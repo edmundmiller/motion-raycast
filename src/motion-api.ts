@@ -118,7 +118,7 @@ const BASE_URL = "https://api.usemotion.com/v1";
 
 async function makeMotionRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const { apiKey } = getPreferenceValues<Preferences>();
-  
+
   console.log("🔗 Making request to:", `${BASE_URL}${endpoint}`);
   console.log("📋 Request options:", {
     method: options.method || "GET",
@@ -127,13 +127,13 @@ async function makeMotionRequest<T>(endpoint: string, options: RequestInit = {})
       "Content-Type": "application/json",
       ...options.headers,
     },
-    body: options.body ? "Present" : "None"
+    body: options.body ? "Present" : "None",
   });
-  
+
   if (options.body) {
     console.log("📦 Request body:", options.body);
   }
-  
+
   const response = await fetch(`${BASE_URL}${endpoint}`, {
     ...options,
     headers: {
@@ -173,7 +173,7 @@ export async function getUser(): Promise<MotionUser> {
 const cache = {
   workspaces: null as MotionWorkspace[] | null,
   workspacesCacheTime: 0,
-  projects: new Map<string, { data: MotionProject[], cacheTime: number }>(),
+  projects: new Map<string, { data: MotionProject[]; cacheTime: number }>(),
 };
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -181,17 +181,17 @@ const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 export async function getWorkspaces(): Promise<MotionWorkspace[]> {
   // Check cache first
   const now = Date.now();
-  if (cache.workspaces && (now - cache.workspacesCacheTime) < CACHE_DURATION) {
+  if (cache.workspaces && now - cache.workspacesCacheTime < CACHE_DURATION) {
     console.log("📋 Using cached workspaces");
     return cache.workspaces;
   }
 
   const response = await makeMotionRequest<MotionWorkspacesResponse>("/workspaces");
-  
+
   // Update cache
   cache.workspaces = response.workspaces;
   cache.workspacesCacheTime = now;
-  
+
   return response.workspaces;
 }
 
@@ -215,12 +215,12 @@ export async function getTasks(params?: {
   workspaceId?: string;
 }): Promise<MotionTasksResponse> {
   const searchParams = new URLSearchParams();
-  
+
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined) {
         if (Array.isArray(value)) {
-          value.forEach(v => searchParams.append(key, v));
+          value.forEach((v) => searchParams.append(key, v));
         } else {
           searchParams.append(key, String(value));
         }
@@ -245,7 +245,7 @@ export async function createTask(task: {
   labels?: string[];
 }): Promise<MotionTask> {
   console.log("🚀 createTask called with:", JSON.stringify(task, null, 2));
-  
+
   // Clean up the task data according to Motion API requirements
   const taskData: any = {
     name: task.name.trim(),
@@ -346,10 +346,10 @@ export async function updateTask(taskId: string, updates: Partial<MotionTask>): 
 export async function getProjects(workspaceId?: string): Promise<MotionProject[]> {
   const cacheKey = workspaceId || "all";
   const now = Date.now();
-  
+
   // Check cache first
   const cachedProjects = cache.projects.get(cacheKey);
-  if (cachedProjects && (now - cachedProjects.cacheTime) < CACHE_DURATION) {
+  if (cachedProjects && now - cachedProjects.cacheTime < CACHE_DURATION) {
     console.log("📋 Using cached projects for workspace:", workspaceId);
     return cachedProjects.data;
   }
@@ -358,15 +358,15 @@ export async function getProjects(workspaceId?: string): Promise<MotionProject[]
   if (workspaceId) {
     searchParams.append("workspaceId", workspaceId);
   }
-  
+
   const endpoint = `/projects${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
   const response = await makeMotionRequest<MotionProjectsResponse>(endpoint);
-  
+
   // Update cache
   cache.projects.set(cacheKey, {
     data: response.projects,
     cacheTime: now,
   });
-  
+
   return response.projects;
-} 
+}

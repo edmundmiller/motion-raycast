@@ -8,8 +8,6 @@ interface State {
   error?: Error;
 }
 
-type FilterType = "all" | "completed" | "pending" | "asap" | "high" | "medium" | "low";
-
 function TaskDetail({ task }: { task: MotionTask }) {
   const markdown = `
 # ${task.name}
@@ -118,14 +116,24 @@ export default function Command() {
     tasks: [],
     isLoading: true,
   });
-  const [filter, setFilter] = useState<FilterType>("all");
 
   useEffect(() => {
-    async function fetchTasks() {
+    async function fetchTodaysTasks() {
       try {
         setState((prev) => ({ ...prev, isLoading: true, error: undefined }));
         const response = await getTasks();
-        setState((prev) => ({ ...prev, tasks: response.tasks, isLoading: false }));
+
+        // Filter tasks created today
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        const todaysTasks = response.tasks.filter((task) => {
+          const createdDate = new Date(task.createdTime);
+          createdDate.setHours(0, 0, 0, 0);
+          return createdDate.getTime() === today.getTime();
+        });
+
+        setState((prev) => ({ ...prev, tasks: todaysTasks, isLoading: false }));
       } catch (error) {
         setState((prev) => ({
           ...prev,
@@ -134,13 +142,13 @@ export default function Command() {
         }));
         showToast({
           style: Toast.Style.Failure,
-          title: "Failed to load tasks",
+          title: "Failed to load today's tasks",
           message: error instanceof Error ? error.message : "Unknown error",
         });
       }
     }
 
-    fetchTasks();
+    fetchTodaysTasks();
   }, []);
 
   const getPriorityIcon = (priority: string) => {
@@ -186,26 +194,14 @@ export default function Command() {
       accessories.push({ text: task.assignees.map((a) => a.name).join(", ") });
     }
 
-    return accessories;
-  };
+    // Add creation time
+    const createdTime = new Date(task.createdTime).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    accessories.push({ text: `Created: ${createdTime}` });
 
-  const filterTasks = (tasks: MotionTask[], filter: FilterType): MotionTask[] => {
-    switch (filter) {
-      case "completed":
-        return tasks.filter((task) => task.completed);
-      case "pending":
-        return tasks.filter((task) => !task.completed);
-      case "asap":
-        return tasks.filter((task) => task.priority === "ASAP");
-      case "high":
-        return tasks.filter((task) => task.priority === "HIGH");
-      case "medium":
-        return tasks.filter((task) => task.priority === "MEDIUM");
-      case "low":
-        return tasks.filter((task) => task.priority === "LOW");
-      default:
-        return tasks;
-    }
+    return accessories;
   };
 
   const sortTasks = (tasks: MotionTask[]): MotionTask[] => {
@@ -219,41 +215,20 @@ export default function Command() {
         return aPriority - bPriority;
       }
 
-      // Then by due date (earliest first)
-      if (a.dueDate && b.dueDate) {
-        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
-      }
-      if (a.dueDate && !b.dueDate) return -1;
-      if (!a.dueDate && b.dueDate) return 1;
-
-      // Finally by creation date (newest first)
+      // Then by creation time (newest first)
       return new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime();
     });
   };
 
-  const filteredAndSortedTasks = sortTasks(filterTasks(state.tasks, filter));
+  const sortedTasks = sortTasks(state.tasks);
 
   return (
     <List
       isLoading={state.isLoading}
-      searchBarPlaceholder="Search Motion tasks..."
-      searchBarAccessory={
-        <List.Dropdown tooltip="Filter Tasks" value={filter} onChange={(newValue) => setFilter(newValue as FilterType)}>
-          <List.Dropdown.Item title="All Tasks" value="all" />
-          <List.Dropdown.Section title="Status">
-            <List.Dropdown.Item title="Completed" value="completed" icon={Icon.CheckCircle} />
-            <List.Dropdown.Item title="Pending" value="pending" icon={Icon.Circle} />
-          </List.Dropdown.Section>
-          <List.Dropdown.Section title="Priority">
-            <List.Dropdown.Item title="ASAP" value="asap" icon={Icon.ExclamationMark} />
-            <List.Dropdown.Item title="High" value="high" icon={Icon.ArrowUp} />
-            <List.Dropdown.Item title="Medium" value="medium" icon={Icon.Minus} />
-            <List.Dropdown.Item title="Low" value="low" icon={Icon.ArrowDown} />
-          </List.Dropdown.Section>
-        </List.Dropdown>
-      }
+      searchBarPlaceholder="Search today's new tasks..."
+      navigationTitle="New Tasks for Today"
     >
-      {filteredAndSortedTasks.map((task) => (
+      {sortedTasks.map((task) => (
         <List.Item
           key={task.id}
           icon={getPriorityIcon(task.priority)}
@@ -283,19 +258,15 @@ export default function Command() {
           }
         />
       ))}
-      {!state.isLoading && filteredAndSortedTasks.length === 0 && state.tasks.length > 0 && (
+      {!state.isLoading && sortedTasks.length === 0 && (
         <List.EmptyView
-          icon={Icon.MagnifyingGlass}
-          title="No tasks match your filter"
-          description="Try adjusting your filter or search criteria."
+          icon={Icon.Calendar}
+          title="No new tasks created today"
+          description="You haven't created any tasks today yet. Use 'Capture Motion Task' to create one!"
         />
       )}
-      {!state.isLoading && state.tasks.length === 0 && (
-        <List.EmptyView
-          icon={Icon.Document}
-          title="No tasks found"
-          description="You don't have any tasks in Motion or they couldn't be loaded."
-        />
+      {state.error && (
+        <List.EmptyView icon={Icon.ExclamationMark} title="Failed to load tasks" description={state.error.message} />
       )}
     </List>
   );
