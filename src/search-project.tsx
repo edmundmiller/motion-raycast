@@ -52,17 +52,75 @@ export default function SearchProject() {
     loadProjects();
   }, []);
 
-  // Filter projects based on search text
-  const filteredProjects = projects.filter(project => {
-    if (!searchText) return true;
+  // Helper function to determine if a project is active (not completed/cancelled)
+  function isActiveProject(project: MotionProject): boolean {
+    if (!project.status) return true; // If no status, assume active
     
-    const searchLower = searchText.toLowerCase();
-    return (
-      project.name.toLowerCase().includes(searchLower) ||
-      project.description.toLowerCase().includes(searchLower) ||
-      project.workspace.name.toLowerCase().includes(searchLower)
-    );
-  });
+    const statusName = project.status.name.toLowerCase();
+    
+    // Filter out completed, cancelled, done, finished, archived projects
+    const inactiveStatuses = [
+      'completed', 'complete', 'done', 'finished', 'cancelled', 'canceled', 
+      'archived', 'closed', 'resolved', 'ended'
+    ];
+    
+    return !inactiveStatuses.some(inactive => statusName.includes(inactive)) && 
+           !project.status.isResolvedStatus;
+  }
+
+  // Helper function to get project priority for sorting
+  function getProjectSortPriority(project: MotionProject): number {
+    if (!project.status) return 3; // Default priority for projects without status
+    
+    const statusName = project.status.name.toLowerCase();
+    
+    // Priority order: in-progress (1), todo/planned (2), backlog (3), others (4)
+    if (statusName.includes('progress') || statusName.includes('active') || statusName.includes('current')) {
+      return 1; // In Progress - highest priority
+    }
+    if (statusName.includes('todo') || statusName.includes('planned') || statusName.includes('ready') || statusName.includes('next')) {
+      return 2; // Todo/Planned - second priority
+    }
+    if (statusName.includes('backlog') || statusName.includes('future') || statusName.includes('someday')) {
+      return 3; // Backlog - third priority
+    }
+    
+    // For default status, put it in todo category
+    if (project.status.isDefaultStatus) {
+      return 2;
+    }
+    
+    return 4; // Other statuses - lowest priority
+  }
+
+  // Filter and sort projects
+  const filteredAndSortedProjects = projects
+    .filter(project => {
+      // First filter by active status
+      if (!isActiveProject(project)) return false;
+      
+      // Then filter by search text
+      if (!searchText) return true;
+      
+      const searchLower = searchText.toLowerCase();
+      return (
+        project.name.toLowerCase().includes(searchLower) ||
+        project.description.toLowerCase().includes(searchLower) ||
+        project.workspace.name.toLowerCase().includes(searchLower)
+      );
+    })
+    .sort((a, b) => {
+      // Sort by priority first
+      const priorityA = getProjectSortPriority(a);
+      const priorityB = getProjectSortPriority(b);
+      
+      if (priorityA !== priorityB) {
+        return priorityA - priorityB;
+      }
+      
+      // If same priority, sort by updated date (most recent first)
+      return new Date(b.updatedTime).getTime() - new Date(a.updatedTime).getTime();
+    });
 
   async function copyProjectId(project: MotionProject) {
     await Clipboard.copy(project.id);
@@ -85,9 +143,40 @@ export default function SearchProject() {
   function getProjectStatusIcon(project: MotionProject): string {
     if (!project.status) return "📋";
     
-    if (project.status.isResolvedStatus) return "✅";
-    if (project.status.isDefaultStatus) return "🔄";
-    return "📋";
+    const statusName = project.status.name.toLowerCase();
+    
+    // In Progress projects
+    if (statusName.includes('progress') || statusName.includes('active') || statusName.includes('current')) {
+      return "🚀"; // In Progress
+    }
+    
+    // Todo/Planned projects  
+    if (statusName.includes('todo') || statusName.includes('planned') || statusName.includes('ready') || statusName.includes('next')) {
+      return "📝"; // Todo/Planned
+    }
+    
+    // Backlog projects
+    if (statusName.includes('backlog') || statusName.includes('future') || statusName.includes('someday')) {
+      return "📚"; // Backlog
+    }
+    
+    // Default status
+    if (project.status.isDefaultStatus) {
+      return "📝"; // Treat default as todo
+    }
+    
+    return "📋"; // Other statuses
+  }
+
+  function getProjectStatusSection(project: MotionProject): string {
+    const priority = getProjectSortPriority(project);
+    
+    switch (priority) {
+      case 1: return "🚀 In Progress";
+      case 2: return "📝 Todo & Planned";
+      case 3: return "📚 Backlog";
+      default: return "📋 Other";
+    }
   }
 
   function formatProjectDescription(description: string): string {
@@ -149,56 +238,70 @@ ${formattedDescription || "No description available"}
     );
   }
 
+  // Group projects by section for better organization
+  const projectSections = filteredAndSortedProjects.reduce((acc, project) => {
+    const section = getProjectStatusSection(project);
+    if (!acc[section]) {
+      acc[section] = [];
+    }
+    acc[section].push(project);
+    return acc;
+  }, {} as Record<string, ProjectWithWorkspace[]>);
+
   return (
     <List
       isLoading={isLoading}
       searchText={searchText}
       onSearchTextChange={setSearchText}
-      searchBarPlaceholder="Search projects by name, description, or workspace..."
+      searchBarPlaceholder="Search active projects by name, description, or workspace..."
       throttle
     >
-      {filteredProjects.length === 0 && !isLoading && (
+      {filteredAndSortedProjects.length === 0 && !isLoading && (
         <List.EmptyView
           icon={Icon.MagnifyingGlass}
-          title="No Projects Found"
-          description={searchText ? "Try adjusting your search terms" : "No projects available"}
+          title="No Active Projects Found"
+          description={searchText ? "Try adjusting your search terms" : "No active projects available"}
         />
       )}
       
-      {filteredProjects.map((project) => (
-        <List.Item
-          key={project.id}
-          icon={getProjectStatusIcon(project)}
-          title={project.name}
-          subtitle={project.workspace.name}
-          accessories={[
-            { text: project.status?.name || "No status" },
-            { text: new Date(project.updatedTime).toLocaleDateString() }
-          ]}
-          actions={
-            <ActionPanel>
-              <Action.Push
-                title="Show Details"
-                target={<ProjectDetail project={project} />}
-                icon={Icon.Eye}
-              />
-              <ActionPanel.Section title="Copy">
-                <Action
-                  title="Copy Project ID"
-                  onAction={() => copyProjectId(project)}
-                  icon={Icon.Clipboard}
-                  shortcut={{ modifiers: ["cmd"], key: "c" }}
-                />
-                <Action
-                  title="Copy Project Name"
-                  onAction={() => copyProjectName(project)}
-                  icon={Icon.Clipboard}
-                  shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
-                />
-              </ActionPanel.Section>
-            </ActionPanel>
-          }
-        />
+      {Object.entries(projectSections).map(([sectionTitle, sectionProjects]) => (
+        <List.Section key={sectionTitle} title={sectionTitle}>
+          {sectionProjects.map((project) => (
+            <List.Item
+              key={project.id}
+              icon={getProjectStatusIcon(project)}
+              title={project.name}
+              subtitle={project.workspace.name}
+              accessories={[
+                { text: project.status?.name || "No status" },
+                { text: new Date(project.updatedTime).toLocaleDateString() }
+              ]}
+              actions={
+                <ActionPanel>
+                  <Action.Push
+                    title="Show Details"
+                    target={<ProjectDetail project={project} />}
+                    icon={Icon.Eye}
+                  />
+                  <ActionPanel.Section title="Copy">
+                    <Action
+                      title="Copy Project ID"
+                      onAction={() => copyProjectId(project)}
+                      icon={Icon.Clipboard}
+                      shortcut={{ modifiers: ["cmd"], key: "c" }}
+                    />
+                    <Action
+                      title="Copy Project Name"
+                      onAction={() => copyProjectName(project)}
+                      icon={Icon.Clipboard}
+                      shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+                    />
+                  </ActionPanel.Section>
+                </ActionPanel>
+              }
+            />
+          ))}
+        </List.Section>
       ))}
     </List>
   );
