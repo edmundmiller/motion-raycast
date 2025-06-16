@@ -1,0 +1,62 @@
+{
+  "$schema": "https://www.raycast.com/schemas/extension.json",
+  "name": "motion",
+  "title": "Motion",
+  "description": "Manage Motion tasks",
+  "icon": "extension-icon.png",
+  "author": "edmundmiller",
+  "license": "MIT",
+  "commands": [
+    {
+      "name": "search-project",
+      "title": "Search Project",
+      "description": "Search through Motion projects",
+      "mode": "view"
+    },
+    {
+      "name": "search-tasks",
+      "title": "Search Tasks",
+      "description": "Search for Motion tasks",
+      "mode": "view"
+    },
+    {
+      "name": "capture-motion-task",
+      "title": "Capture Motion Task",
+      "description": "Captures a Motion Task like option+space but better",
+      "mode": "view"
+    },
+    {
+      "name": "create-obsidian-note",
+      "title": "Create Obsidian Note",
+      "description": "Create an Obsidian Note for the current calendar event",
+      "mode": "no-view"
+    }
+  ],
+  "tools": [
+    {
+      "name": "create-a-motion-task",
+      "title": "Create a Motion task",
+      "description": "Create a new motion task with the given parameters"
+    }
+  ],
+  "dependencies": {
+    "@raycast/api": "^1.100.2",
+    "@raycast/utils": "^1.17.0"
+  },
+  "devDependencies": {
+    "@raycast/eslint-config": "^2.0.4",
+    "@types/node": "22.13.10",
+    "@types/react": "19.0.10",
+    "eslint": "^9.22.0",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.2"
+  },
+  "scripts": {
+    "build": "ray build",
+    "dev": "ray develop",
+    "fix-lint": "ray lint --fix",
+    "lint": "ray lint",
+    "prepublishOnly": "echo \"\\n\\nIt seems like you are trying to publish the Raycast extension to npm.\\n\\nIf you did intend to publish it to npm, remove the \\`prepublishOnly\\` script and rerun \\`npm publish\\` again.\\nIf you wanted to publish it to the Raycast Store instead, use \\`npm run publish\\` instead.\\n\\n\" && exit 1",
+    "publish": "npx @raycast/api@latest publish"
+  }
+}
