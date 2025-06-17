@@ -174,7 +174,7 @@ export default function Command() {
         title: "Marking task complete...",
       });
 
-      const updatedTask = await updateTask(task.id, {
+      await updateTask(task.id, {
         completed: true,
       });
 
@@ -284,7 +284,7 @@ export default function Command() {
 
     return availableStatuses
       .filter((status) => status.name !== currentStatusName)
-      .map((status, index) => (
+      .map((status) => (
         <Action
           key={status.name}
           icon={getStatusIcon(status)}

@@ -65,7 +65,7 @@ export default function CaptureMotionTask() {
           priority: priority || undefined,
           duration: duration || undefined,
         });
-      } catch (error) {
+      } catch {
         console.log("No local defaults found");
       }
     }
@@ -144,7 +144,18 @@ export default function CaptureMotionTask() {
       console.log("Creating task with values:", values);
 
       // Prepare task data
-      const taskData: any = {
+      const taskData: {
+        name: string;
+        description?: string;
+        duration?: string | number;
+        dueDate?: string;
+        deadlineType?: "HARD" | "SOFT" | "NONE";
+        priority?: "ASAP" | "HIGH" | "MEDIUM" | "LOW";
+        assigneeId?: string;
+        projectId?: string;
+        workspaceId?: string;
+        labels?: string[];
+      } = {
         name: values.name.trim(),
         priority: values.priority,
         workspaceId: values.workspaceId || selectedWorkspaceId,
@@ -231,7 +242,18 @@ export default function CaptureMotionTask() {
     setIsLoading(true);
 
     try {
-      const quickTask = {
+      const quickTask: {
+        name: string;
+        description?: string;
+        duration?: string | number;
+        dueDate?: string;
+        deadlineType?: "HARD" | "SOFT" | "NONE";
+        priority?: "ASAP" | "HIGH" | "MEDIUM" | "LOW";
+        assigneeId?: string;
+        projectId?: string;
+        workspaceId?: string;
+        labels?: string[];
+      } = {
         name: values.name.trim(),
         priority: (preferences.defaultPriority || localDefaults.priority || "MEDIUM") as
           | "ASAP"
@@ -244,18 +266,18 @@ export default function CaptureMotionTask() {
       // Add project if one is selected or set as default
       const defaultProjectId = values.projectId || preferences.defaultProjectId || localDefaults.projectId;
       if (defaultProjectId) {
-        (quickTask as any).projectId = defaultProjectId;
+        quickTask.projectId = defaultProjectId;
       }
 
       // Add duration if set as default
       const defaultDuration = preferences.defaultDuration || localDefaults.duration;
       if (defaultDuration) {
         if (defaultDuration === "NONE" || defaultDuration === "REMINDER") {
-          (quickTask as any).duration = defaultDuration;
+          quickTask.duration = defaultDuration;
         } else {
           const durationNum = parseInt(defaultDuration);
           if (!isNaN(durationNum) && durationNum > 0) {
-            (quickTask as any).duration = durationNum;
+            quickTask.duration = durationNum;
           }
         }
       }

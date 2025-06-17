@@ -80,7 +80,7 @@ export default function ListWorkspacesProjects() {
         title: "Default Workspace Set",
         message: `"${workspace.name}" is now your default workspace`,
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: "Failed to Set Default",
@@ -98,7 +98,7 @@ export default function ListWorkspacesProjects() {
         title: "Default Project Set",
         message: `"${project.name}" is now your default project`,
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: "Failed to Set Default",
@@ -115,7 +115,7 @@ export default function ListWorkspacesProjects() {
         title: "Default Project Cleared",
         message: "No default project will be used",
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: "Failed to Clear Default",
@@ -147,7 +147,7 @@ export default function ListWorkspacesProjects() {
         title: "Default Priority Set",
         message: `${priorityEmoji[priority]} ${priority} is now your default priority`,
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: "Failed to Set Priority",
@@ -164,7 +164,7 @@ export default function ListWorkspacesProjects() {
         title: "Default Duration Set",
         message: `${duration} minutes is now your default duration`,
       });
-    } catch (error) {
+    } catch {
       await showToast({
         style: Toast.Style.Failure,
         title: "Failed to Set Duration",

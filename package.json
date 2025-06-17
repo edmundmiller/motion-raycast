@@ -2,10 +2,24 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "motion",
   "title": "Motion",
-  "description": "Manage Motion tasks",
+  "description": "Manage Motion tasks directly from Raycast with powerful commands for capturing, searching, and organizing your work",
   "icon": "motion-extension-icon.png",
   "author": "edmundmiller",
   "license": "MIT",
+  "keywords": [
+    "motion",
+    "tasks",
+    "productivity",
+    "project management",
+    "calendar",
+    "scheduling",
+    "task management",
+    "workflow"
+  ],
+  "categories": [
+    "Productivity",
+    "Developer Tools"
+  ],
   "commands": [
     {
       "name": "search-project",

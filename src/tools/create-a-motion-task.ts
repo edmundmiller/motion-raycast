@@ -1,22 +1,11 @@
 import { getPreferenceValues } from "@raycast/api";
-import { createTask, getDefaultWorkspaceId, getProjects, getWorkspaces } from "../motion-api";
+import { createTask, getDefaultWorkspaceId, getProjects } from "../motion-api";
 
 interface Preferences {
   defaultWorkspaceId?: string;
   defaultProjectId?: string;
   defaultPriority?: "ASAP" | "HIGH" | "MEDIUM" | "LOW";
   defaultDuration?: string;
-}
-
-interface TaskCreationParams {
-  name: string;
-  description?: string;
-  priority?: "ASAP" | "HIGH" | "MEDIUM" | "LOW";
-  duration?: string | number;
-  dueDate?: string;
-  deadlineType?: "HARD" | "SOFT" | "NONE";
-  projectName?: string;
-  workspaceName?: string;
 }
 
 export default async function createMotionTask(
@@ -41,7 +30,18 @@ export default async function createMotionTask(
     const preferences = getPreferenceValues<Preferences>();
 
     // Prepare task data
-    const taskData: any = {
+    const taskData: {
+      name: string;
+      description?: string;
+      duration?: string | number;
+      dueDate?: string;
+      deadlineType?: "HARD" | "SOFT" | "NONE";
+      priority?: "ASAP" | "HIGH" | "MEDIUM" | "LOW";
+      assigneeId?: string;
+      projectId?: string;
+      workspaceId?: string;
+      labels?: string[];
+    } = {
       name: taskName.trim(),
     };
 

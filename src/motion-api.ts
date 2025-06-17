@@ -247,7 +247,7 @@ export async function createTask(task: {
   console.log("🚀 createTask called with:", JSON.stringify(task, null, 2));
 
   // Clean up the task data according to Motion API requirements
-  const taskData: any = {
+  const taskData: Record<string, unknown> = {
     name: task.name.trim(),
   };
 
