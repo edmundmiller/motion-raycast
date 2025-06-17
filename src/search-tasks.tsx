@@ -1,4 +1,5 @@
 import { ActionPanel, List, Action, Icon, showToast, Toast, Color, Detail } from "@raycast/api";
+import { getProgressIcon } from "@raycast/utils";
 import { useState, useEffect } from "react";
 import { getTasks, MotionTask } from "./motion-api";
 
@@ -143,6 +144,76 @@ export default function Command() {
     fetchTasks();
   }, []);
 
+  const getTaskProgressIcon = (task: MotionTask) => {
+    // If task is completed, show full progress
+    if (task.completed) {
+      return getProgressIcon(1.0, Color.Green);
+    }
+
+    const now = new Date();
+    
+    // If task has scheduled start and end times, calculate time-based progress
+    if (task.scheduledStart && task.scheduledEnd) {
+      const startTime = new Date(task.scheduledStart);
+      const endTime = new Date(task.scheduledEnd);
+      
+      // If not started yet
+      if (now < startTime) {
+        return getProgressIcon(0, Color.Blue);
+      }
+      
+      // If overdue
+      if (now > endTime) {
+        return getProgressIcon(1.0, Color.Red);
+      }
+      
+      // Calculate progress based on elapsed time
+      const totalDuration = endTime.getTime() - startTime.getTime();
+      const elapsedTime = now.getTime() - startTime.getTime();
+      const progress = Math.max(0, Math.min(1, elapsedTime / totalDuration));
+      
+      // Color based on priority
+      let color = Color.Blue;
+      switch (task.priority) {
+        case "ASAP":
+          color = Color.Red;
+          break;
+        case "HIGH":
+          color = Color.Orange;
+          break;
+        case "MEDIUM":
+          color = Color.Yellow;
+          break;
+        case "LOW":
+          color = Color.Blue;
+          break;
+      }
+      
+      return getProgressIcon(progress, color);
+    }
+    
+    // Fallback: use due date if available
+    if (task.dueDate) {
+      const dueTime = new Date(task.dueDate);
+      const createdTime = new Date(task.createdTime);
+      
+      // If overdue
+      if (now > dueTime) {
+        return getProgressIcon(1.0, Color.Red);
+      }
+      
+      // Calculate progress based on time until due date
+      const totalDuration = dueTime.getTime() - createdTime.getTime();
+      const elapsedTime = now.getTime() - createdTime.getTime();
+      const progress = Math.max(0, Math.min(0.9, elapsedTime / totalDuration)); // Cap at 90% until completed
+      
+      return getProgressIcon(progress, Color.Blue);
+    }
+    
+    // No time information available - show minimal progress
+    return getProgressIcon(0.1, Color.SecondaryText);
+  };
+
   const getPriorityIcon = (priority: string) => {
     switch (priority) {
       case "ASAP":
@@ -256,7 +327,7 @@ export default function Command() {
       {filteredAndSortedTasks.map((task) => (
         <List.Item
           key={task.id}
-          icon={getPriorityIcon(task.priority)}
+          icon={getTaskProgressIcon(task)}
           title={task.name}
           subtitle={getTaskSubtitle(task)}
           accessories={getTaskAccessories(task)}

@@ -1,4 +1,5 @@
-import { ActionPanel, Detail, List, Action, Icon, showToast, Toast, Clipboard } from "@raycast/api";
+import { ActionPanel, Detail, List, Action, Icon, showToast, Toast, Clipboard, Color } from "@raycast/api";
+import { getProgressIcon } from "@raycast/utils";
 import { useState, useEffect } from "react";
 import { getWorkspaces, getProjects, MotionWorkspace, MotionProject } from "./motion-api";
 
@@ -76,6 +77,64 @@ export default function SearchProject() {
   }
 
   // Helper function to get project priority for sorting
+  function getProjectProgressIcon(project: MotionProject) {
+    const statusName = project.status?.name.toLowerCase() || "";
+    
+    // Completed/Done projects
+    if (statusName.includes("completed") || 
+        statusName.includes("complete") || 
+        statusName.includes("done") || 
+        statusName.includes("finished") ||
+        project.status?.isResolvedStatus) {
+      return getProgressIcon(1.0, Color.Green);
+    }
+    
+    // In Progress projects - calculate based on time since creation
+    if (statusName.includes("progress") || 
+        statusName.includes("active") || 
+        statusName.includes("current")) {
+      
+      const now = new Date();
+      const createdTime = new Date(project.createdTime);
+      const updatedTime = new Date(project.updatedTime);
+      
+      // If recently updated (within 7 days), show higher progress
+      const daysSinceUpdate = (now.getTime() - updatedTime.getTime()) / (1000 * 60 * 60 * 24);
+      const daysSinceCreation = (now.getTime() - createdTime.getTime()) / (1000 * 60 * 60 * 24);
+      
+      let progress = 0.3; // Base progress for in-progress projects
+      
+      // Increase progress based on activity (recent updates)
+      if (daysSinceUpdate < 1) progress = 0.8;
+      else if (daysSinceUpdate < 3) progress = 0.6;
+      else if (daysSinceUpdate < 7) progress = 0.5;
+      
+      // Adjust based on age of project
+      if (daysSinceCreation > 30) progress = Math.min(progress + 0.2, 0.9);
+      
+      return getProgressIcon(progress, Color.Orange);
+    }
+    
+    // Todo/Planned projects
+    if (statusName.includes("todo") || 
+        statusName.includes("planned") || 
+        statusName.includes("ready") || 
+        statusName.includes("next") ||
+        project.status?.isDefaultStatus) {
+      return getProgressIcon(0.1, Color.Blue);
+    }
+    
+    // Backlog projects
+    if (statusName.includes("backlog") || 
+        statusName.includes("future") || 
+        statusName.includes("someday")) {
+      return getProgressIcon(0.05, Color.SecondaryText);
+    }
+    
+    // Default for unknown statuses
+    return getProgressIcon(0.2, Color.SecondaryText);
+  }
+
   function getProjectSortPriority(project: MotionProject): number {
     if (!project.status) return 3; // Default priority for projects without status
 
@@ -293,7 +352,7 @@ ${formattedDescription || "No description available"}
           {sectionProjects.map((project) => (
             <List.Item
               key={project.id}
-              icon={getProjectStatusIcon(project)}
+              icon={getProjectProgressIcon(project)}
               title={project.name}
               subtitle={project.workspace.name}
               accessories={[
