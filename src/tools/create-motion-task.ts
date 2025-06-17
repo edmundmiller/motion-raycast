@@ -8,6 +8,15 @@ interface Preferences {
   defaultDuration?: string;
 }
 
+interface CreateTaskParams {
+  taskName: string;
+  taskDescription?: string;
+  priority?: string;
+  durationMinutes?: number;
+  dueDate?: string;
+  projectName?: string;
+}
+
 /**
  * Parse natural language date strings into ISO format
  * Handles: "today", "tomorrow", "next monday", "in 3 days", "2024-01-15", etc.
@@ -88,15 +97,10 @@ function parseNaturalPriority(priorityString: string): "ASAP" | "HIGH" | "MEDIUM
   return null;
 }
 
-export default async function createMotionTask(
-  taskName: string,
-  taskDescription?: string,
-  priority?: string,
-  durationMinutes?: number,
-  dueDate?: string,
-  projectName?: string,
-): Promise<string> {
+export default async function createMotionTask(params: CreateTaskParams): Promise<string> {
   try {
+    const { taskName, taskDescription, priority, durationMinutes, dueDate, projectName } = params;
+    
     console.log("🤖 AI Tool: Creating Motion task", {
       taskName,
       taskDescription,

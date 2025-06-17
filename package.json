@@ -58,7 +58,38 @@
       "mode": "view"
     }
   ],
-  "tools": [],
+  "tools": [
+    {
+      "name": "create-motion-task",
+      "title": "Create Motion Task",
+      "description": "Create a new task in Motion with title, description, priority, duration, due date, and project assignment. This tool can understand natural language for dates and priorities.",
+      "mode": "no-view"
+    },
+    {
+      "name": "search-motion-tasks",
+      "title": "Search Motion Tasks",
+      "description": "Search for existing Motion tasks by name, status, priority, project, or assignee. Returns detailed task information including descriptions, due dates, and progress.",
+      "mode": "no-view"
+    },
+    {
+      "name": "update-task-status",
+      "title": "Update Task Status",
+      "description": "Update the status or priority of existing Motion tasks. Can mark tasks as complete, change priority levels, or update task assignments.",
+      "mode": "no-view"
+    },
+    {
+      "name": "get-task-summary",
+      "title": "Get Task Summary",
+      "description": "Get a summary of Motion tasks including today's tasks, overdue tasks, task counts by priority, and current workload analysis.",
+      "mode": "no-view"
+    },
+    {
+      "name": "search-projects",
+      "title": "Search Motion Projects",
+      "description": "Search for Motion projects and get project details including task counts, team members, and project status.",
+      "mode": "no-view"
+    }
+  ],
   "preferences": [
     {
       "name": "apiKey",
