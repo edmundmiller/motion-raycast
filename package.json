@@ -2,7 +2,7 @@
   "$schema": "https://www.raycast.com/schemas/extension.json",
   "name": "motion",
   "title": "Motion",
-  "description": "Manage Motion tasks directly from Raycast with powerful commands for capturing, searching, and organizing your work",
+  "description": "Search, create, and manage Motion tasks with powerful commands for capturing, organizing, and updating your work",
   "icon": "motion-extension-icon.png",
   "author": "edmundmiller",
   "license": "MIT",
@@ -36,13 +36,13 @@
     {
       "name": "capture-motion-task",
       "title": "Capture Motion Task",
-      "description": "Captures a Motion Task like option+space but better",
+      "description": "Create new Motion tasks with rich form inputs and smart defaults",
       "mode": "view"
     },
     {
       "name": "list-workspaces-projects",
       "title": "List Workspaces & Projects",
-      "description": "View all workspaces and projects with their IDs for setting up preferences",
+      "description": "Browse workspaces and projects to configure extension preferences",
       "mode": "view"
     },
     {
