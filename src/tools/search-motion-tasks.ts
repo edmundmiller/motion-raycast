@@ -6,6 +6,9 @@ interface SearchTasksParams {
   workspaceId?: string;
 }
 
+// More flexible parameter type for Raycast AI tools
+type FlexibleSearchParams = SearchTasksParams | string | any;
+
 /**
  * Parse natural language search queries into API parameters
  */
@@ -138,22 +141,47 @@ function formatTaskResults(tasks: MotionTask[], searchParams: any): string {
   if (searchParams.completed !== undefined) {
     result += `📊 Filtered by status: ${searchParams.completed ? "Completed" : "Pending"}\n`;
   }
+  
+  // If no search criteria were provided, indicate this is showing all tasks
+  if (!searchParams.name && !searchParams.priority && searchParams.completed === undefined && 
+      !searchParams.assigneeSearch && !searchParams.projectSearch) {
+    result += `📋 Showing all available tasks\n`;
+  }
 
   return result;
 }
 
-export default async function searchMotionTasks(params: SearchTasksParams): Promise<string> {
+export default async function searchMotionTasks(params: FlexibleSearchParams): Promise<string> {
   try {
-    const { searchQuery, limit, workspaceId } = params;
+    console.log("🔍 AI Tool: Raw parameters received:", params);
+    
+    // Handle case where params might be a string instead of an object
+    let searchQuery: string;
+    let limit: number | undefined;
+    let workspaceId: string | undefined;
+    
+    if (typeof params === 'string') {
+      // If params is a string, treat it as the search query
+      searchQuery = params;
+    } else if (params && typeof params === 'object') {
+      // If params is an object, extract the properties
+      searchQuery = params.searchQuery || '';
+      limit = params.limit;
+      workspaceId = params.workspaceId;
+    } else {
+      throw new Error("Invalid parameters provided. Expected search query or parameters object.");
+    }
     
     console.log("🔍 AI Tool: Searching Motion tasks", { searchQuery, limit, workspaceId });
 
+    // If no search query provided, return all tasks (useful for general task browsing)
     if (!searchQuery || searchQuery.trim().length === 0) {
-      throw new Error("Search query is required");
+      console.log("⚠️ No search query provided, returning all tasks");
+      searchQuery = ""; // Empty string will match all tasks
     }
 
-    // Parse the natural language query
-    const searchParams = parseSearchQuery(searchQuery);
+    // Parse the natural language query (only if we have a query)
+    const searchParams = searchQuery.trim() ? parseSearchQuery(searchQuery) : {};
     console.log("📝 Parsed search parameters:", searchParams);
 
     // Build API parameters
@@ -230,6 +258,8 @@ export default async function searchMotionTasks(params: SearchTasksParams): Prom
 
       if (error.message.includes("401") || error.message.includes("403")) {
         errorMessage += "\n\n💡 Tip: Check your Motion API key in Raycast preferences.";
+      } else if (error.message.includes("Search query is required")) {
+        errorMessage += "\n\n💡 Tip: Make sure to provide a search term when using this tool.";
       }
     }
 
