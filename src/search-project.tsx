@@ -1,7 +1,7 @@
 import { ActionPanel, Detail, List, Action, Icon, showToast, Toast, Clipboard, Color } from "@raycast/api";
 import { getProgressIcon } from "@raycast/utils";
 import { useState, useEffect } from "react";
-import { getWorkspaces, getProjects, MotionWorkspace, MotionProject } from "./motion-api";
+import { getWorkspaces, getProjects, getTasks, MotionWorkspace, MotionProject, MotionTask } from "./motion-api";
 
 interface ProjectWithWorkspace extends MotionProject {
   workspace: MotionWorkspace;
@@ -271,6 +271,232 @@ export default function SearchProject() {
       .trim();
   }
 
+  function ProjectTasks({ project }: { project: ProjectWithWorkspace }) {
+    const [tasks, setTasks] = useState<MotionTask[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [searchText, setSearchText] = useState("");
+
+    useEffect(() => {
+      async function loadTasks() {
+        try {
+          setIsLoading(true);
+          console.log(`🔄 Loading tasks for project: ${project.name} (${project.id})`);
+          
+          const response = await getTasks({ projectId: project.id });
+          setTasks(response.tasks);
+          
+          console.log(`✅ Loaded ${response.tasks.length} tasks for project ${project.name}`);
+        } catch (error) {
+          console.error("❌ Failed to load project tasks:", error);
+          await showToast({
+            style: Toast.Style.Failure,
+            title: "Failed to Load Tasks",
+            message: error instanceof Error ? error.message : "Unknown error",
+          });
+        } finally {
+          setIsLoading(false);
+        }
+      }
+
+      loadTasks();
+    }, [project.id]);
+
+    function getTaskIcon(task: MotionTask): string {
+      if (task.completed || task.status?.isResolvedStatus) {
+        return "✅";
+      }
+      
+      switch (task.priority) {
+        case "ASAP":
+          return "🔴";
+        case "HIGH":
+          return "🟠";
+        case "MEDIUM":
+          return "🟡";
+        case "LOW":
+          return "🟢";
+        default:
+          return "📝";
+      }
+    }
+
+    function getTaskProgressIcon(task: MotionTask) {
+      if (task.completed || task.status?.isResolvedStatus) {
+        return getProgressIcon(1.0, Color.Green);
+      }
+      
+      const now = new Date();
+      const created = new Date(task.createdTime);
+      const daysSinceCreation = (now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24);
+      
+      // If task has a due date, calculate urgency
+      if (task.dueDate) {
+        const due = new Date(task.dueDate);
+        const daysUntilDue = (due.getTime() - now.getTime()) / (1000 * 60 * 60 * 24);
+        
+        if (daysUntilDue < 0) {
+          return getProgressIcon(0.9, Color.Red); // Overdue
+        } else if (daysUntilDue < 1) {
+          return getProgressIcon(0.8, Color.Orange); // Due soon
+        } else if (daysUntilDue < 3) {
+          return getProgressIcon(0.6, Color.Yellow); // Due this week
+        }
+      }
+      
+      // Base progress on priority and age
+      let progress = 0.3;
+      switch (task.priority) {
+        case "ASAP":
+          progress = 0.8;
+          break;
+        case "HIGH":
+          progress = 0.6;
+          break;
+        case "MEDIUM":
+          progress = 0.4;
+          break;
+        case "LOW":
+          progress = 0.2;
+          break;
+      }
+      
+      return getProgressIcon(progress, Color.Blue);
+    }
+
+    // Filter tasks by search text
+    const filteredTasks = tasks.filter((task) => {
+      if (!searchText) return true;
+      
+      const searchLower = searchText.toLowerCase();
+      return (
+        task.name.toLowerCase().includes(searchLower) ||
+        task.description.toLowerCase().includes(searchLower)
+      );
+    });
+
+    // Sort tasks: incomplete first, then by priority, then by due date
+    const sortedTasks = filteredTasks.sort((a, b) => {
+      // Completed tasks go to bottom
+      if (a.completed !== b.completed) {
+        return a.completed ? 1 : -1;
+      }
+      
+      // Sort by priority
+      const priorityOrder = { "ASAP": 0, "HIGH": 1, "MEDIUM": 2, "LOW": 3 };
+      const aPriority = priorityOrder[a.priority] ?? 4;
+      const bPriority = priorityOrder[b.priority] ?? 4;
+      
+      if (aPriority !== bPriority) {
+        return aPriority - bPriority;
+      }
+      
+      // Sort by due date (tasks with due dates first)
+      if (a.dueDate && !b.dueDate) return -1;
+      if (!a.dueDate && b.dueDate) return 1;
+      if (a.dueDate && b.dueDate) {
+        return new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime();
+      }
+      
+      // Finally sort by creation date (newest first)
+      return new Date(b.createdTime).getTime() - new Date(a.createdTime).getTime();
+    });
+
+    async function copyTaskId(task: MotionTask) {
+      await Clipboard.copy(task.id);
+      await showToast({
+        style: Toast.Style.Success,
+        title: "Copied Task ID",
+        message: `"${task.name}" ID copied to clipboard`,
+      });
+    }
+
+    function formatTaskAccessories(task: MotionTask) {
+      const accessories = [];
+      
+      if (task.priority !== "MEDIUM") {
+        accessories.push({ text: task.priority });
+      }
+      
+      if (task.dueDate) {
+        const dueDate = new Date(task.dueDate);
+        const now = new Date();
+        const isOverdue = dueDate < now;
+        const isToday = dueDate.toDateString() === now.toDateString();
+        const isTomorrow = dueDate.toDateString() === new Date(now.getTime() + 24 * 60 * 60 * 1000).toDateString();
+        
+        let dueDateText = dueDate.toLocaleDateString();
+        if (isToday) dueDateText = "Today";
+        else if (isTomorrow) dueDateText = "Tomorrow";
+        else if (isOverdue) dueDateText = `Overdue (${dueDate.toLocaleDateString()})`;
+        
+        accessories.push({ 
+          text: dueDateText,
+          icon: isOverdue ? Icon.ExclamationMark : (isToday || isTomorrow) ? Icon.Clock : undefined
+        });
+      }
+      
+      if (task.assignees.length > 0) {
+        accessories.push({ text: task.assignees[0].name });
+      }
+      
+      return accessories;
+    }
+
+    return (
+      <List
+        isLoading={isLoading}
+        searchText={searchText}
+        onSearchTextChange={setSearchText}
+        searchBarPlaceholder="Search tasks..."
+        navigationTitle={`${project.name} Tasks`}
+        throttle
+      >
+        {sortedTasks.length === 0 && !isLoading && (
+          <List.EmptyView
+            icon={Icon.CheckCircle}
+            title="No Tasks Found"
+            description={searchText ? "Try adjusting your search terms" : "This project has no tasks"}
+          />
+        )}
+
+        {sortedTasks.map((task) => (
+          <List.Item
+            key={task.id}
+            icon={getTaskProgressIcon(task)}
+            title={task.name}
+            subtitle={task.description || undefined}
+            accessories={formatTaskAccessories(task)}
+            actions={
+              <ActionPanel>
+                <ActionPanel.Section title="Task Actions">
+                  <Action
+                    title="Copy Task ID"
+                    onAction={() => copyTaskId(task)}
+                    icon={Icon.Clipboard}
+                    shortcut={{ modifiers: ["cmd"], key: "c" }}
+                  />
+                  <Action.CopyToClipboard
+                    title="Copy Task Name"
+                    content={task.name}
+                    shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+                  />
+                </ActionPanel.Section>
+                <ActionPanel.Section title="Project Actions">
+                  <Action.Push 
+                    title="Show Project Details" 
+                    target={<ProjectDetail project={project} />} 
+                    icon={Icon.Eye}
+                    shortcut={{ modifiers: ["cmd"], key: "p" }}
+                  />
+                </ActionPanel.Section>
+              </ActionPanel>
+            }
+          />
+        ))}
+      </List>
+    );
+  }
+
   function ProjectDetail({ project }: { project: ProjectWithWorkspace }) {
     const formattedDescription = formatProjectDescription(project.description);
 
@@ -297,21 +523,29 @@ ${formattedDescription || "No description available"}
         markdown={markdown}
         actions={
           <ActionPanel>
-            <Action.CopyToClipboard
-              title="Copy Project ID"
-              content={project.id}
-              shortcut={{ modifiers: ["cmd"], key: "c" }}
+            <Action.Push
+              title="Show Project Tasks"
+              target={<ProjectTasks project={project} />}
+              icon={Icon.List}
+              shortcut={{ modifiers: ["cmd"], key: "t" }}
             />
-            <Action.CopyToClipboard
-              title="Copy Project Name"
-              content={project.name}
-              shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
-            />
-            <Action.CopyToClipboard
-              title="Copy Workspace ID"
-              content={project.workspaceId}
-              shortcut={{ modifiers: ["cmd", "opt"], key: "c" }}
-            />
+            <ActionPanel.Section title="Copy">
+              <Action.CopyToClipboard
+                title="Copy Project ID"
+                content={project.id}
+                shortcut={{ modifiers: ["cmd"], key: "c" }}
+              />
+              <Action.CopyToClipboard
+                title="Copy Project Name"
+                content={project.name}
+                shortcut={{ modifiers: ["cmd", "shift"], key: "c" }}
+              />
+              <Action.CopyToClipboard
+                title="Copy Workspace ID"
+                content={project.workspaceId}
+                shortcut={{ modifiers: ["cmd", "opt"], key: "c" }}
+              />
+            </ActionPanel.Section>
           </ActionPanel>
         }
       />
@@ -361,7 +595,17 @@ ${formattedDescription || "No description available"}
               ]}
               actions={
                 <ActionPanel>
-                  <Action.Push title="Show Details" target={<ProjectDetail project={project} />} icon={Icon.Eye} />
+                  <Action.Push 
+                    title="Show Project Tasks" 
+                    target={<ProjectTasks project={project} />} 
+                    icon={Icon.List} 
+                  />
+                  <Action.Push 
+                    title="Show Project Details" 
+                    target={<ProjectDetail project={project} />} 
+                    icon={Icon.Eye}
+                    shortcut={{ modifiers: ["cmd"], key: "d" }}
+                  />
                   <ActionPanel.Section title="Copy">
                     <Action
                       title="Copy Project ID"
