@@ -3,7 +3,7 @@
   "name": "motion",
   "title": "Motion",
   "description": "Manage Motion tasks",
-  "icon": "extension-icon.png",
+  "icon": "motion-extension-icon.png",
   "author": "edmundmiller",
   "license": "MIT",
   "commands": [
